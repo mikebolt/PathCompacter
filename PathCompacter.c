@@ -103,13 +103,13 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
 
 // This is the cleanup macro for the CompactPath function.
 #define COMPACT_PATH_RETURN(iReturnValue)\
-	errno = iOldErrno;\ // Restore the error code.
-	free(pCallStackBase);\ // Free the only allocated memory.
-	return iReturnValue;
+   errno = iOldErrno;\ // Restore the error code.
+   free(pCallStackBase);\ // Free the only allocated memory.
+   return iReturnValue;
 
 #define FAILURE 0
 #define SUCCESS 1
-	
+   
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
 // Please allocate the resultPointArray to be as large as the pointArray passed in.
@@ -207,7 +207,7 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
                {
                COMPACT_PATH_RETURN(FAILURE);
                }
-				}
+            }
          }
       else if (subproblemResultCode == COMPACT_PATH_RESULT_CODE_LINEARIZE ||
                subproblemResultCode == COMPACT_PATH_RESULT_CODE_SOLVED)
@@ -234,7 +234,7 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 
    *piPointsInResultPath = iNumSolvedPoints;
    
-	COMPACT_PATH_RETURN(SUCCESS);
+   COMPACT_PATH_RETURN(SUCCESS);
    }
 
 // If the result is COMPACT_PATH_RESULT_CODE_DIVIDE, it means that the algorithm needs to divide
@@ -251,7 +251,7 @@ CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iP
       double dEpsilon)
    {
    double dSquareSegLen, dDX, dDY, dArea, dSquareDeviation, dMaxSquareDeviationInThisSegment,
-		ax, ay, bx, by, cx, cy;
+      ax, ay, bx, by, cx, cy;
    int i, iMaxPointIndex;
    
    // If there are fewer than three points provided, the problem is solved already.
@@ -281,7 +281,7 @@ CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iP
       by = pPointArray[i].dY;
       // TODO: optionally use the endpoint distance if the triangle is skew.
       dArea = ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
-		
+      
       dSquareDeviation = dArea * dArea / dSquareSegLen;
       if (dSquareDeviation > dMaxSquareDeviationInThisSegment)
          {
@@ -306,4 +306,4 @@ CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iP
       return COMPACT_PATH_RESULT_CODE_DIVIDE;
       }
    }
-	
+   
