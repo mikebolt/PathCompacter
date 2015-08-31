@@ -102,10 +102,14 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
    }
 
 // This is the cleanup macro for the CompactPath function.
+// Restore the error code, free the only allocated memory,
+// and return the parameter as the return value.
 #define COMPACT_PATH_RETURN(iReturnValue)\
-   errno = iOldErrno;\ // Restore the error code.
-   free(pCallStackBase);\ // Free the only allocated memory.
-   return iReturnValue;
+   {\
+   errno=iOldErrno;\
+   free(pCallStackBase);\
+   return iReturnValue;\
+   }
 
 #define FAILURE 0
 #define SUCCESS 1
@@ -266,7 +270,7 @@ CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iP
       return COMPACT_PATH_RESULT_CODE_SOLVED;
       }
    
-   dMaxDeviationInThisSegment = 0.0;
+   dMaxSquareDeviationInThisSegment = 0.0;
    ax = pPointArray[0].dX;
    ay = pPointArray[0].dY;
    cx = pPointArray[iPointsInCurrentPath-1].dX;
@@ -286,7 +290,7 @@ CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iP
       if (dSquareDeviation > dMaxSquareDeviationInThisSegment)
          {
          iMaxPointIndex = i;
-         dMaxSquareDeviationInThisSegment = dDeviation;
+         dMaxSquareDeviationInThisSegment = dSquareDeviation;
          }
       }
    
