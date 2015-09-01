@@ -41,7 +41,6 @@ typedef struct CompactPathSubproblemCall
    DVector2D *pPointArray;
    DVector2D *pResultPointArray;
    int iPointsInCurrentPath;
-   int iCopyFirstPoint;
    } CompactPathSubproblemCall;
    
 typedef enum CompactPathResultCode
@@ -50,6 +49,9 @@ typedef enum CompactPathResultCode
    COMPACT_PATH_RESULT_CODE_LINEARIZE,
    COMPACT_PATH_RESULT_CODE_SOLVED
    } CompactPathResultCode;
+
+#define FAILURE 0
+#define SUCCESS 1
    
 CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iPointsInCurrentPath,
       DVector2D *pResultPointArray, int *piPointsInResultPath, int *piDivisionIndex,
@@ -73,7 +75,7 @@ static int CompactPathCallStackPush(CompactPathSubproblemCall **ppCallStackBase,
       if (errno || *ppCallStackBase == NULL)
          {
          // The stack can't grow.
-         return 0; // Failure
+         return FAILURE;
          }
       }
       
@@ -81,7 +83,7 @@ static int CompactPathCallStackPush(CompactPathSubproblemCall **ppCallStackBase,
       (*ppCallStackBase)[*piNumCallsInStack] = *pCall;
       ++(*piNumCallsInStack);
       
-      return 1; // Success
+      return SUCCESS;
    }
 
 static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
@@ -92,12 +94,12 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
       {
       --(*piNumCallsInStack);
       *pPoppedCall = pCallStackBase[*piNumCallsInStack];
-      return 1; // Success
+      return SUCCESS;
       }
    else
       {
       // There are no calls to pop.
-      return 0; // Failure
+      return FAILURE;
       }
    }
 
@@ -109,9 +111,6 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
    free(pCallStackBase);\
    return iReturnValue;\
    }
-
-#define FAILURE 0
-#define SUCCESS 1
    
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
