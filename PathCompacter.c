@@ -102,11 +102,10 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
    }
 
 // This is the cleanup macro for the CompactPath function.
-// Restore the error code, free the only allocated memory,
-// and return the parameter as the return value.
+// Free the only allocated memory and return the parameter
+// as the return value.
 #define COMPACT_PATH_RETURN(iReturnValue)\
    {\
-   errno=iOldErrno;\
    free(pCallStackBase);\
    return iReturnValue;\
    }
@@ -131,9 +130,6 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
    CompactPathResultCode subproblemResultCode; // The status of the most recent subproblem call
    int iNumSolvedPoints = 0; // Keep track of how much of the result array is solved and in place.
    int iPointsInResultPath; // Number of valid points in the result array after a subproblem call
-   
-   // Save the old value of errno so that it can be restored before returning.
-   int iOldErrno = errno;
    
    // Clear errno so that we can be sure that a nonzero value is caused by this function.
    errno = 0;
