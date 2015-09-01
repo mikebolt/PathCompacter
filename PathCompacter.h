@@ -1,7 +1,7 @@
 /*
    PathCompacter.h
    08/29/2015
-   Author: Michael Casebolt, Brett Casebolt
+   Authors: Michael Casebolt, Brett Casebolt
 */
 
 /*

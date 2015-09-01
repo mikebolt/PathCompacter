@@ -1,7 +1,7 @@
 /*
    PathCompacter.c
    08/29/2015
-   Author: Michael Casebolt, Brett Casebolt
+   Authors: Michael Casebolt, Brett Casebolt
 */
 
 /*
@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-// This line is 100 characters long. It is provided so you can adjust your terminal width to fit it.
+// This file uses lines up to 100 characters long. If this 100 character line fits then you're good.
 
 #include "PathCompacter.h"
 
