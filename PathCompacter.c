@@ -53,9 +53,9 @@ typedef enum CompactPathResultCode
 #define FAILURE 0
 #define SUCCESS 1
    
-CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iPointsInCurrentPath,
-      DVector2D *pResultPointArray, int *piPointsInResultPath, int *piDivisionIndex,
-      double dEpsilon);
+static CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray,
+      int iPointsInCurrentPath, DVector2D *pResultPointArray,
+      int *piPointsInResultPath, int *piDivisionIndex, double dEpsilon);
 
 // The call stack will start able to hold this many calls and grow by this amount whenever it needs
 // to grow in size.
@@ -245,9 +245,9 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 // If the result is COMPACT_PATH_RESULT_CODE_SOLVED, it means that the algorithm does not need to
 // do any further work on the subproblem, because it is already solved. In this case, divisionIndex
 // is not set.
-CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray, int iPointsInCurrentPath,
-      DVector2D *pResultPointArray, int *piPointsInResultPath, int *piDivisionIndex,
-      double dEpsilon)
+static CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray,
+      int iPointsInCurrentPath, DVector2D *pResultPointArray,
+      int *piPointsInResultPath, int *piDivisionIndex, double dEpsilon)
    {
    double dSquareSegLen, dDX, dDY, dArea, dSquareDeviation, dMaxSquareDeviationInThisSegment,
       ax, ay, bx, by, cx, cy;
