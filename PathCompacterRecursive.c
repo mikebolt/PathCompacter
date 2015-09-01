@@ -145,7 +145,6 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
    else
       {
       // Split the subproblem. Make sure to keep this left-recursive.
-      //*piDivisionIndex = iMaxPointIndex;
       
       CompactPathRecursive(pPointArray, iMaxPointIndex + 1, dEpsilon);
 
