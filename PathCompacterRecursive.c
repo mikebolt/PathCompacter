@@ -109,7 +109,7 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
             pCompacterLocation += iPointsInCurrentPath - 1;
          }
          
-         return;
+      return;
       }
    
    dMaxSquareDeviationInThisSegment = 0.0;
@@ -154,6 +154,5 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
                            dEpsilon);
       }
       
-      return;
+   return;
    }
-
