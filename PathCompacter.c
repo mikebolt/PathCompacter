@@ -28,6 +28,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+// This line is 100 characters long. It is provided so you can adjust your terminal width to fit it.
+
 #include "PathCompacter.h"
 
 #include <stdlib.h> // For memory management
@@ -62,8 +64,9 @@ static CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray,
 #define COMPACT_PATH_CALL_STACK_UNIT 2048
 
 // callStackBase is a double pointer because realloc might move the base pointer.
-static int CompactPathCallStackPush(CompactPathSubproblemCall **ppCallStackBase, int *piCallStackCapacity,
-                                    int *piNumCallsInStack, CompactPathSubproblemCall *pCall)
+static int CompactPathCallStackPush(CompactPathSubproblemCall **ppCallStackBase,
+                                    int *piCallStackCapacity, int *piNumCallsInStack,
+                                    CompactPathSubproblemCall *pCall)
    {
    // Check if the stack is full.
    if (*piNumCallsInStack >= *piCallStackCapacity)
@@ -124,18 +127,29 @@ static int CompactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
 int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
                 DVector2D *pResultPointArray, int *piPointsInResultPath, double dEpsilon)
    {
-   CompactPathSubproblemCall firstSubproblem, secondSubproblem;
+   CompactPathSubproblemCall current, firstSubproblem, secondSubproblem;
    int iDivisionIndex; // Where should we split the problem into subproblems?
    CompactPathResultCode subproblemResultCode; // The status of the most recent subproblem call
-   int iNumSolvedPoints = 0; // Keep track of how much of the result array is solved and in place.
+   int iNumSolvedPoints; // Keep track of how much of the result array is solved and in place.
    int iPointsInResultPath; // Number of valid points in the result array after a subproblem call
+   int iCallStackCapacity; // How many calls can the call stack hold right now?
+   int iNumCallsInStack; // How many calls are in the call stack right now?
    
    // Clear errno so that we can be sure that a nonzero value is caused by this function.
    errno = 0;
+
+   // Copy the first point into the result. This can be done because its final location is
+   // known (it will still be the first point), and it will certainly be in the final array
+   // (it can never be removed).
+   // The compacter skips copying the first point of each subproblem because it is added as the
+   // last point of the subproblem before it. Copying the very first point is necessary
+   // because the leftmost subproblem has no prior subproblem.
+   *pResultPointArray = *pPointArray;
+   iNumSolvedPoints = 1;
    
    // Allocate a call stack.
-   int iCallStackCapacity = COMPACT_PATH_CALL_STACK_UNIT;
-   int iNumCallsInStack = 0;
+   iCallStackCapacity = COMPACT_PATH_CALL_STACK_UNIT;
+   iNumCallsInStack = 0;
    CompactPathSubproblemCall *pCallStackBase = (CompactPathSubproblemCall *)
       malloc(sizeof(CompactPathSubproblemCall) * COMPACT_PATH_CALL_STACK_UNIT);
    
@@ -144,14 +158,10 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
       COMPACT_PATH_RETURN(FAILURE);
       }
 
-   // Set up the first instance of the problem.
-   CompactPathSubproblemCall current = 
-      {
-      pPointArray,
-      pResultPointArray,
-      iPointsInCurrentPath,
-      1 // 1 means copy first point. The main subproblem needs its first point copied to the result.
-      };
+   // Set up the first instance of the problem, representing the whole problem.
+   current.pPointArray = pPointArray; 
+   current.pResultPointArray = pResultPointArray;
+   current.iPointsInCurrentPath = iPointsInCurrentPath;
    
    // Add the first instance to the stack
    if (!CompactPathCallStackPush(&pCallStackBase, &iCallStackCapacity, &iNumCallsInStack, &current))
@@ -182,13 +192,13 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
             // Create two new subproblems and push them.
             // It's important that the way that results are copied is compatible with the order in
             // which the subproblem calls are pushed to the stack.
+            // This function is left-recursive. It performs left-side subproblems before
+            // right-side subproblems. This means that the left-side subproblem needs to be
+            // pushed to the stack last, so that it is popped back out first.
 
             secondSubproblem.pPointArray = current.pPointArray + iDivisionIndex;
             secondSubproblem.pResultPointArray = current.pResultPointArray + iDivisionIndex;
             secondSubproblem.iPointsInCurrentPath = current.iPointsInCurrentPath - iDivisionIndex;
-            // Never copy the first point of a right-side subproblem. This shared point will
-            // always be copied at the return of the left-side subproblem.
-            secondSubproblem.iCopyFirstPoint = 0; // 0 means do not copy.
             if (!CompactPathCallStackPush(&pCallStackBase, &iCallStackCapacity,
                                           &iNumCallsInStack, &secondSubproblem))
                {
@@ -198,9 +208,6 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
             firstSubproblem.pPointArray = current.pPointArray;
             firstSubproblem.pResultPointArray = current.pResultPointArray;
             firstSubproblem.iPointsInCurrentPath = iDivisionIndex + 1;
-            // Only copy the first point for the left subproblem when the just-returned call
-            // needs its first point copied.
-            firstSubproblem.iCopyFirstPoint = current.iCopyFirstPoint;
             if (!CompactPathCallStackPush(&pCallStackBase, &iCallStackCapacity,
                                           &iNumCallsInStack, &firstSubproblem))
                {
@@ -212,11 +219,10 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
                subproblemResultCode == COMPACT_PATH_RESULT_CODE_SOLVED)
          {
          // Copy the results to their final destination in the result array.
-         if (!current.iCopyFirstPoint)
-            {
-            ++current.pResultPointArray;
-            --iPointsInResultPath;
-            }
+
+         // Always skip copying the first point.
+         ++current.pResultPointArray;
+         --iPointsInResultPath;
          
          // There's a good chance that the memory regions will overlap at some point.
          memmove(pResultPointArray + iNumSolvedPoints, current.pResultPointArray,
@@ -305,4 +311,4 @@ static CompactPathResultCode CompactPathSubproblemSolver(DVector2D *pPointArray,
       return COMPACT_PATH_RESULT_CODE_DIVIDE;
       }
    }
-   
+
