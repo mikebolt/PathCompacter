@@ -28,6 +28,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifdef PATH_COMPACTER_HEADER_INCLUDED
+#define PATH_COMPACTER_HEADER_INCLUDED
+
 // The following struct represents a double precision 2D point.
 typedef struct DVector2D
    {
@@ -53,9 +56,11 @@ typedef double (*DeviationMetric)(DVector2D startOfSegment, DVector2D endOfSegme
 // On failure, pointsInResultPath and the contents of resultPointArray are undefined.
 extern int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
                        DVector2D *pResultPointArray, int *piPointsInResultPath,
-                       double dEpsilon, CompactPathDeviationMetric deviationMetric);
+                       double dEpsilon, DeviationMetric deviationMetric);
 
 // Declare several metric function implementations.
 
 extern DeviationMetric perpendicularOffsetDeviationMetric;
 extern DeviationMetric shortestDistanceToSegmentDeviationMetric;
+
+#endif
