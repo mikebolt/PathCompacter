@@ -35,6 +35,13 @@ typedef struct DVector2D
    double dY;
    } DVector2D;
 
+// Use a typedef'd function pointer to refer to the metric calculation callbacks.
+// These accept the start and end point of the path or subproblem, and the intermediate
+// point in consideration. The segment length is passed in as well so that the callback does
+// not have to recalculate it every time it gets called.
+typedef double (*DeviationMetric)(DVector2D startOfSegment, DVector2D endOfSegment,
+                                  DVector2D point, double dSegmentLength);
+
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
 // Please allocate the resultPointArray to be as large as the pointArray passed in.
@@ -44,5 +51,11 @@ typedef struct DVector2D
 // and resultPointArray, keeping in mind that doing so will likely alter pointArray.
 // Returns a true value (1) on successful completion, and returns a false value (0) otherwise.
 // On failure, pointsInResultPath and the contents of resultPointArray are undefined.
-int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
-                DVector2D *pResultPointArray, int *piPointsInResultPath, double dEpsilon);
+extern int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
+                       DVector2D *pResultPointArray, int *piPointsInResultPath,
+                       double dEpsilon, CompactPathDeviationMetric deviationMetric);
+
+// Declare several metric function implementations.
+
+extern DeviationMetric perpendicularOffsetDeviationMetric;
+extern DeviationMetric shortestDistanceToSegmentDeviationMetric;
