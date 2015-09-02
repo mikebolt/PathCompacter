@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifdef PATH_COMPACTER_HEADER_INCLUDED
+#ifndef PATH_COMPACTER_HEADER_INCLUDED
 #define PATH_COMPACTER_HEADER_INCLUDED
 
 // The following struct represents a double precision 2D point.
@@ -40,10 +40,12 @@ typedef struct DVector2D
 
 // Use a typedef'd function pointer to refer to the metric calculation callbacks.
 // These accept the start and end point of the path or subproblem, and the intermediate
-// point in consideration. The segment length is passed in as well so that the callback does
-// not have to recalculate it every time it gets called.
+// point in consideration. The square of the segment length is passed in as well so that the
+// callback does not have to recalculate it every time it gets called.
+// These callbacks must return the square of the actual value that they intend to be compared
+// against epsilon. This is because squaring often is better than sqrt'ing sometimes.
 typedef double (*DeviationMetric)(DVector2D startOfSegment, DVector2D endOfSegment,
-                                  DVector2D point, double dSegmentLength);
+                                  DVector2D point, double dSquareSegmentLength);
 
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
@@ -60,7 +62,7 @@ extern int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 
 // Declare several metric function implementations.
 
-extern DeviationMetric perpendicularOffsetDeviationMetric;
+extern DeviationMetric perpendicularDistanceDeviationMetric;
 extern DeviationMetric shortestDistanceToSegmentDeviationMetric;
 
 #endif
