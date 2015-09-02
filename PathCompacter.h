@@ -44,8 +44,8 @@ typedef struct DVector2D
 // callback does not have to recalculate it every time it gets called.
 // These callbacks must return the square of the actual value that they intend to be compared
 // against epsilon. This is because squaring often is better than sqrt'ing sometimes.
-typedef double (*DeviationMetric)(DVector2D startOfSegment, DVector2D endOfSegment,
-                                  DVector2D point, double dSquareSegmentLength);
+typedef double (*DeviationMetric)(DVector2D /*startOfSegment*/, DVector2D /*endOfSegment*/,
+                                  DVector2D /*point*/, double /*dSquareSegmentLength*/);
 
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
@@ -56,13 +56,13 @@ typedef double (*DeviationMetric)(DVector2D startOfSegment, DVector2D endOfSegme
 // and resultPointArray, keeping in mind that doing so will likely alter pointArray.
 // Returns a true value (1) on successful completion, and returns a false value (0) otherwise.
 // On failure, pointsInResultPath and the contents of resultPointArray are undefined.
-extern int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
-                       DVector2D *pResultPointArray, int *piPointsInResultPath,
-                       double dEpsilon, DeviationMetric deviationMetric);
+int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
+                DVector2D *pResultPointArray, int *piPointsInResultPath,
+                double dEpsilon, DeviationMetric deviationMetric);
 
 // Declare several metric function implementations.
 
-extern DeviationMetric perpendicularDistanceDeviationMetric;
-extern DeviationMetric shortestDistanceToSegmentDeviationMetric;
+DeviationMetric perpendicularDistanceDeviationMetric;
+DeviationMetric shortestDistanceToSegmentDeviationMetric;
 
 #endif

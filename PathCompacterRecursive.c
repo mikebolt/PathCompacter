@@ -41,8 +41,12 @@ THE SOFTWARE.
 // array where the next points to be solved should be placed.
 // Only CompactPath and CompactPathRecursive should touch this variable.
 static DVector2D *pCompacterLocation;
+
+// Save the deviation metric function pointer so that it doesn't have to be copied on the stack
+// a bunch of times.
+static DeviationMetric currentDeviationMetric;
    
-static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPath, double dEpsilon);
+static void compactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPath, double dEpsilon);
 
 // This function iteratively simulates the recursive Ramer-Douglas-Peucker algorithm.
 // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
@@ -53,8 +57,9 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
 // and resultPointArray, keeping in mind that doing so will likely alter pointArray.
 // Returns a true value (1) on successful completion, and returns a false value (0) otherwise.
 // This function might blow up the stack and crash your program.
-int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
-                DVector2D *pResultPointArray, int *piPointsInResultPath, double dEpsilon)
+extern int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
+                       DVector2D *pResultPointArray, int *piPointsInResultPath,
+                       double dEpsilon, DeviationMetric deviationMetric)
    {
    int iFinalSuccessValue;
 
@@ -74,8 +79,10 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
    *pResultPointArray = *pPointArray;
    pCompacterLocation = pResultPointArray + 1;
 
+   currentDeviationMetric = deviationMetric;
+
    // Launch the first call of CompactPathRecursive.
-   CompactPathRecursive(pPointArray, iPointsInCurrentPath, dEpsilon);
+   compactPathRecursive(pPointArray, iPointsInCurrentPath, dEpsilon);
 
    // Calculate and return through pointer the number of points in the resulting path.
    *piPointsInResultPath = pCompacterLocation - pResultPointArray;
@@ -92,10 +99,9 @@ int CompactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 // If the result is COMPACT_PATH_RESULT_CODE_SOLVED, it means that the algorithm does not need to
 // do any further work on the subproblem, because it is already solved. In this case, divisionIndex
 // is not set.
-static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPath, double dEpsilon)
+static void compactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPath, double dEpsilon)
    {
-   double dSquareSegLen, dDX, dDY, dArea, dSquareDeviation, dMaxSquareDeviationInThisSegment,
-      ax, ay, bx, by, cx, cy;
+   double dSquareSegLen, dDX, dDY, dArea, dSquareDeviation, dMaxSquareDeviationInThisSegment;
    int i, iMaxPointIndex;
    
    // If there are fewer than three points provided, the problem is solved already.
@@ -113,22 +119,16 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
       }
    
    dMaxSquareDeviationInThisSegment = 0.0;
-   ax = pPointArray[0].dX;
-   ay = pPointArray[0].dY;
-   cx = pPointArray[iPointsInCurrentPath-1].dX;
-   cy = pPointArray[iPointsInCurrentPath-1].dY;
-   dDX = cx - ax;
-   dDY = cy - ay;
+
+   dDX = pPointArray[iPointsInCurrentPath-1].dX - pPointArray[0].dX;
+   dDY = pPointArray[iPointsInCurrentPath-1].dY - pPointArray[0].dY;
    dSquareSegLen = dDX * dDX + dDY * dDY;
    
    for (i = 1; i < iPointsInCurrentPath - 1; ++i)
       {
-      bx = pPointArray[i].dX;
-      by = pPointArray[i].dY;
-      // TODO: optionally use the endpoint distance if the triangle is skew.
-      dArea = ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
+      dSquareDeviation = currentDeviationMetric(pPointArray[0],
+         pPointArray[iPointsInCurrentPath - 1], pPointArray[i], dSquareSegLen);
       
-      dSquareDeviation = dArea * dArea / dSquareSegLen;
       if (dSquareDeviation > dMaxSquareDeviationInThisSegment)
          {
          iMaxPointIndex = i;
@@ -148,9 +148,9 @@ static void CompactPathRecursive(DVector2D *pPointArray, int iPointsInCurrentPat
       {
       // Split the subproblem. Make sure to keep this left-recursive.
       
-      CompactPathRecursive(pPointArray, iMaxPointIndex + 1, dEpsilon);
+      compactPathRecursive(pPointArray, iMaxPointIndex + 1, dEpsilon);
 
-      CompactPathRecursive(pPointArray + iMaxPointIndex, iPointsInCurrentPath - iMaxPointIndex,
+      compactPathRecursive(pPointArray + iMaxPointIndex, iPointsInCurrentPath - iMaxPointIndex,
                            dEpsilon);
       }
       
