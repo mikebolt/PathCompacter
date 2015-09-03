@@ -38,9 +38,9 @@ static double perpendicularDistance(DVector2D start, DVector2D end, DVector2D mi
    {
    double dArea;
 
-   dArea = 0.5 * (start.dX * (mid.dY - end.dY) +
+   dArea = start.dX * (mid.dY - end.dY) +
                   mid.dX * (end.dY - start.dY) +
-                  end.dX * (start.dY - mid.dY));
+                  end.dX * (start.dY - mid.dY);
 
    return dArea * dArea / dSquareSegmentLength;
    }
