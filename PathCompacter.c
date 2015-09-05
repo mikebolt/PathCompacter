@@ -42,7 +42,7 @@ typedef struct CompactPathSubproblemCall
    {
    DVector2D *pPointArray;
    DVector2D *pResultPointArray;
-   int iPointsInCurrentPath;
+   int uPointsInCurrentPath;
    } CompactPathSubproblemCall;
    
 typedef enum CompactPathResultCode
@@ -56,8 +56,8 @@ typedef enum CompactPathResultCode
 #define SUCCESS 1
    
 static CompactPathResultCode compactPathSubproblemSolver(DVector2D *pPointArray,
-      int iPointsInCurrentPath, DVector2D *pResultPointArray,
-      int *piPointsInResultPath, int *piDivisionIndex, double dEpsilon,
+      unsigned int uPointsInCurrentPath, DVector2D *pResultPointArray,
+      unsigneed int *puPointsInResultPath, int *piDivisionIndex, double dEpsilon,
       DeviationMetric deviationMetric);
 
 // The call stack will start able to hold this many calls and grow by this amount whenever it needs
@@ -125,15 +125,15 @@ static int compactPathCallStackPop(CompactPathSubproblemCall *pCallStackBase,
 // and resultPointArray, keeping in mind that doing so will likely alter pointArray.
 // Returns a true value (1) on successful completion, and returns a false value (0) otherwise.
 // On failure, pointsInResultPath and the contents of resultPointArray are undefined.
-int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
-                DVector2D *pResultPointArray, int *piPointsInResultPath, double dEpsilon,
-                DeviationMetric deviationMetric)
+int compactPath(DVector2D *pPointArray, unsigned int uPointsInCurrentPath,
+                DVector2D *pResultPointArray, unsigned int *puPointsInResultPath,
+                double dEpsilon, DeviationMetric deviationMetric)
    {
    CompactPathSubproblemCall current, firstSubproblem, secondSubproblem;
    int iDivisionIndex; // Where should we split the problem into subproblems?
    CompactPathResultCode subproblemResultCode; // The status of the most recent subproblem call
    int iNumSolvedPoints; // Keep track of how much of the result array is solved and in place.
-   int iPointsInResultPath; // Number of valid points in the result array after a subproblem call
+   int uPointsInResultPath; // Number of valid points in the result array after a subproblem call
    int iCallStackCapacity; // How many calls can the call stack hold right now?
    int iNumCallsInStack; // How many calls are in the call stack right now?
    
@@ -163,7 +163,7 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
    // Set up the first instance of the problem, representing the whole problem.
    current.pPointArray = pPointArray; 
    current.pResultPointArray = pResultPointArray;
-   current.iPointsInCurrentPath = iPointsInCurrentPath;
+   current.uPointsInCurrentPath = uPointsInCurrentPath;
    
    // Add the first instance to the stack
    if (!compactPathCallStackPush(&pCallStackBase, &iCallStackCapacity, &iNumCallsInStack, &current))
@@ -180,12 +180,12 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
          }
       
       subproblemResultCode = compactPathSubproblemSolver(current.pPointArray,
-         current.iPointsInCurrentPath, current.pResultPointArray, &iPointsInResultPath,
+         current.uPointsInCurrentPath, current.pResultPointArray, &uPointsInResultPath,
          &iDivisionIndex, dEpsilon, deviationMetric);
 
       if (subproblemResultCode == COMPACT_PATH_RESULT_CODE_DIVIDE)
          {
-         if (iDivisionIndex <= 0 || iDivisionIndex >= current.iPointsInCurrentPath)
+         if (iDivisionIndex <= 0 || iDivisionIndex >= current.uPointsInCurrentPath)
             {
             COMPACT_PATH_RETURN(FAILURE);
             }
@@ -200,7 +200,7 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 
             secondSubproblem.pPointArray = current.pPointArray + iDivisionIndex;
             secondSubproblem.pResultPointArray = current.pResultPointArray + iDivisionIndex;
-            secondSubproblem.iPointsInCurrentPath = current.iPointsInCurrentPath - iDivisionIndex;
+            secondSubproblem.uPointsInCurrentPath = current.uPointsInCurrentPath - iDivisionIndex;
             if (!compactPathCallStackPush(&pCallStackBase, &iCallStackCapacity,
                                           &iNumCallsInStack, &secondSubproblem))
                {
@@ -209,7 +209,7 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
             
             firstSubproblem.pPointArray = current.pPointArray;
             firstSubproblem.pResultPointArray = current.pResultPointArray;
-            firstSubproblem.iPointsInCurrentPath = iDivisionIndex + 1;
+            firstSubproblem.uPointsInCurrentPath = iDivisionIndex + 1;
             if (!compactPathCallStackPush(&pCallStackBase, &iCallStackCapacity,
                                           &iNumCallsInStack, &firstSubproblem))
                {
@@ -224,13 +224,13 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 
          // Always skip copying the first point.
          ++current.pResultPointArray;
-         --iPointsInResultPath;
+         --uPointsInResultPath;
          
          // There's a good chance that the memory regions will overlap at some point.
          memmove(pResultPointArray + iNumSolvedPoints, current.pResultPointArray,
-                 sizeof(DVector2D) * iPointsInResultPath);
+                 sizeof(DVector2D) * uPointsInResultPath);
          
-         iNumSolvedPoints += iPointsInResultPath;
+         iNumSolvedPoints += uPointsInResultPath;
          }
       else
          {
@@ -239,7 +239,7 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
          }
       }
 
-   *piPointsInResultPath = iNumSolvedPoints;
+   *puPointsInResultPath = iNumSolvedPoints;
    
    COMPACT_PATH_RETURN(SUCCESS);
    }
@@ -254,35 +254,35 @@ int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
 // do any further work on the subproblem, because it is already solved. In this case, divisionIndex
 // is not set.
 static CompactPathResultCode compactPathSubproblemSolver(DVector2D *pPointArray,
-      int iPointsInCurrentPath, DVector2D *pResultPointArray,
-      int *piPointsInResultPath, int *piDivisionIndex, double dEpsilon,
+      int uPointsInCurrentPath, DVector2D *pResultPointArray,
+      int *puPointsInResultPath, int *piDivisionIndex, double dEpsilon,
       DeviationMetric deviationMetric)
    {
    double dSquareSegLen, dSquareDeviation, dMaxSquareDeviationInThisSegment, dDX, dDY;
    int i, iMaxPointIndex;
    
    // If there are fewer than three points provided, the problem is solved already.
-   if (iPointsInCurrentPath < 3)
+   if (uPointsInCurrentPath < 3)
       {
       // Just copy pointArray into resultPointArray.
-      if (iPointsInCurrentPath > 0)
+      if (uPointsInCurrentPath > 0)
          {
-            memcpy(pResultPointArray, pPointArray, sizeof(DVector2D) * iPointsInCurrentPath);
+            memcpy(pResultPointArray, pPointArray, sizeof(DVector2D) * uPointsInCurrentPath);
          }
-      *piPointsInResultPath = iPointsInCurrentPath;
+      *puPointsInResultPath = uPointsInCurrentPath;
       return COMPACT_PATH_RESULT_CODE_SOLVED;
       }
    
    dMaxSquareDeviationInThisSegment = 0.0;
 
-   dDX = pPointArray[iPointsInCurrentPath - 1].dX - pPointArray[0].dX;
-   dDY = pPointArray[iPointsInCurrentPath - 1].dY - pPointArray[0].dY;
+   dDX = pPointArray[uPointsInCurrentPath - 1].dX - pPointArray[0].dX;
+   dDY = pPointArray[uPointsInCurrentPath - 1].dY - pPointArray[0].dY;
    dSquareSegLen = dDX * dDX + dDY * dDY;
    
-   for (i = 1; i < iPointsInCurrentPath - 1; ++i)
+   for (i = 1; i < uPointsInCurrentPath - 1; ++i)
       {
       dSquareDeviation = deviationMetric(pPointArray[0],
-         pPointArray[iPointsInCurrentPath - 1], pPointArray[i], dSquareSegLen);
+         pPointArray[uPointsInCurrentPath - 1], pPointArray[i], dSquareSegLen);
 
       if (dSquareDeviation > dMaxSquareDeviationInThisSegment)
          {
@@ -296,8 +296,8 @@ static CompactPathResultCode compactPathSubproblemSolver(DVector2D *pPointArray,
       // Linearize the points in the subproblem.
       // To do this, we just copy the first and last points to the result array.
       pResultPointArray[0] = pPointArray[0];
-      pResultPointArray[1] = pPointArray[iPointsInCurrentPath - 1];
-      *piPointsInResultPath = 2;
+      pResultPointArray[1] = pPointArray[uPointsInCurrentPath - 1];
+      *puPointsInResultPath = 2;
       return COMPACT_PATH_RESULT_CODE_LINEARIZE;
       }
    else

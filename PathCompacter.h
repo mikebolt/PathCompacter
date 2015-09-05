@@ -56,8 +56,8 @@ typedef double (*DeviationMetric)(DVector2D /*startOfSegment*/, DVector2D /*endO
 // and resultPointArray, keeping in mind that doing so will likely alter pointArray.
 // Returns a true value (1) on successful completion, and returns a false value (0) otherwise.
 // On failure, pointsInResultPath and the contents of resultPointArray are undefined.
-int compactPath(DVector2D *pPointArray, int iPointsInCurrentPath,
-                DVector2D *pResultPointArray, int *piPointsInResultPath,
+int compactPath(DVector2D *pPointArray, unsigned int uPointsInCurrentPath,
+                DVector2D *pResultPointArray, unsigned int *puPointsInResultPath,
                 double dEpsilon, DeviationMetric deviationMetric);
 
 // Declare several metric function implementations.
